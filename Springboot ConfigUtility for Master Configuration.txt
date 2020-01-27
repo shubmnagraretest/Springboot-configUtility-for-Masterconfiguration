@@ -1,0 +1,57 @@
+
+@Component
+@Configuration
+public class ConfigUtility {
+
+  private static final Logger logger = LoggerFactory.getLogger(ConfigUtility.class);
+
+
+  public static Environment env;
+  public static HashMap<String, String> masterConfiguration = new HashMap<String, String>();
+
+  public static JdbcTemplate jdbcTemplate;
+
+
+
+  @Bean
+  public static Environment setEnv(Environment _env,
+      MasterConfigurationRepository masterConfigurationRepository, JdbcTemplate _jdbcTemplate) {
+    logger.trace("Entering setEnv...");
+    env = _env;
+    masterConfiguration = new HashMap<String, String>();
+    jdbcTemplate = _jdbcTemplate;
+
+    for (MasterConfiguration masterConfigurationObj : masterConfigurationRepository.findAll()) {
+      masterConfiguration.put(masterConfigurationObj.getPropertyKey(),
+          masterConfigurationObj.getPropertyValue());
+    }
+
+    logger.trace("Exiting setEnv...\n");
+    return env;
+
+  }
+
+  public static String getProperty(String propertyKey) {
+
+    logger.trace("Entring getProperty...");
+    String retVal = "";
+
+
+    if (!masterConfiguration.containsKey(propertyKey)) {
+      logger.error("No configuration found in database for key:" + propertyKey);
+      if (!env.containsProperty(propertyKey)) {
+        logger.error("No configuration found in app.props file for key:" + propertyKey);
+
+      } else {
+        retVal = env.getProperty(propertyKey);
+      }
+    } else {
+      retVal = masterConfiguration.get(propertyKey);
+    }
+
+
+    logger.trace("Exiting getProperty...\n");
+    return retVal;
+  }
+
+}
